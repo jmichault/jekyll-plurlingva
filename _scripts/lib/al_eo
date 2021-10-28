@@ -14,7 +14,7 @@ if [ ! -d "$BASEDIR"/../../$lang0 ] ; then
 fi
 cd "$BASEDIR"/../../$lang0
 
-for FIC in `find . -type f ! -name "_*"|egrep -v "/_drafts/|.backup$"`
+for FIC in `find . -type f -name "*.md" -o -name "*.yml"|egrep -v "/_drafts/|.backup$"`
 do
   EXT="${FIC##*.}"
   case "$EXT" in
@@ -26,62 +26,65 @@ do
           ;;
   esac
   # détruire le fichier eo --> langue s'il existe pour éviter la retraduction eo-->langue
-  if [ -f ../_locale/${lang0}/${FIC}.po ]
+  if [ -f "../_locale/${lang0}/${FIC}.po" ]
   then
-    rm -f ../_locale/${lang0}/${FIC}.po
-    if [ -f ../eo/${FIC} -a ! -f ../_locale/eo/${FIC}.po ]
+    rm -f "../_locale/${lang0}/${FIC}.po"
+    if [ -f "../eo/${FIC}" -a ! -f "../_locale/eo/${FIC}.po" ]
     then
       # si ce fichier est une bonne traduction, il faut la récupérer en générant le .po
-      po4a-gettextize -m ${FIC} -M "UTF-8" $OPTIONS -l ../eo/${FIC} -L "UTF-8" --po ../_locale/eo/${FIC}.po 
-      rm -f gettextization.failed.po ../eo/${FIC}
+      po4a-gettextize -m "${FIC}" -M "UTF-8" $OPTIONS -l "../eo/${FIC}" -L "UTF-8" --po "../_locale/eo/${FIC}.po" 
+      rm -f gettextization.failed.po "../eo/${FIC}"
     fi
   fi
 
-  if [ ! -f ../_locale/${lang0}/${FIC}.pot ]
+  if [ ! -f "../_locale/${lang0}/${FIC}.pot" ]
   then
-    po4a-gettextize -m ${FIC} --master-charset "UTF-8" $OPTIONS --po ../_locale/${lang0}/${FIC}.pot 
+    po4a-gettextize -m "${FIC}" --master-charset "UTF-8" $OPTIONS --po "../_locale/${lang0}/${FIC}.pot" 
   else
-    if [ ../_locale/${lang0}/${FIC}.pot -ot ${FIC} ]
+    if [ "../_locale/${lang0}/${FIC}.pot" -ot "${FIC}" ]
     then
-      po4a-updatepo --wrap-po no -m ${FIC} --master-charset "UTF-8" $OPTIONS --po ../_locale/${lang0}/${FIC}.pot 
+      po4a-updatepo --wrap-po no -m "${FIC}" --master-charset "UTF-8" $OPTIONS --po "../_locale/${lang0}/${FIC}.pot" 
     fi
   fi
   for lang in eo
   #for lang in `grep "^..:$" ../_data/languages.yml|sed "s/:$//"|grep -v eo`
   do
-    if [ ! -f ../_locale/${lang}/${FIC}.po -a -f ../${lang}/${FIC} ]
+    if [ ! -f "../_locale/${lang}/${FIC}.po" -a -f "../${lang}/${FIC}" ]
     then
       continue;
     fi
-    if [ ! -f ../_locale/${lang}/${FIC}.po ]
+    if [ ! -f "../_locale/${lang}/${FIC}.po" ]
     then
       echo "krei traduko ${FIC} al ${lang}"
-      cat ../_locale/${lang0}/${FIC}.pot|sed "s/^\"Language: \\\n\"/\"Language: "${lang}"\\\n\"/" > ../_locale/${lang}/${FIC}.po
+      cat "../_locale/${lang0}/${FIC}.pot"|sed "s/^\"Language: \\\n\"/\"Language: "${lang}"\\\n\"/" > "../_locale/${lang}/${FIC}.po"
     fi
-    if [ ../_locale/${lang}/${FIC}.po -ot ../_locale/${lang0}/${FIC}.pot ]
+    if [ "../_locale/${lang}/${FIC}.po" -ot "../_locale/${lang0}/${FIC}.pot" ]
     then
       echo "ĝisdatigi traduko ${FIC} al ${lang}"
-      po4a-updatepo --msgmerge-opt --no-fuzzy-matching --wrap-po no -m ${FIC} --master-charset "UTF-8" $OPTIONS --po ../_locale/${lang}/${FIC}.po
+      po4a-updatepo --msgmerge-opt --no-fuzzy-matching --wrap-po no -m "${FIC}" --master-charset "UTF-8" $OPTIONS --po "../_locale/${lang}/${FIC}.po"
     fi
-    cat ../_locale/${lang}/${FIC}.po|gawk -v BASEDIR=../$BASEDIR -v src=${lang0} -v dst=eo -f ../_scripts/lib/traduki_po.awk >../_locale/${lang}/${FIC}.po.nova
-    if diff ../_locale/${lang}/${FIC}.po.nova ../_locale/${lang}/${FIC}.po >/dev/null
+    cat "../_locale/${lang}/${FIC}.po"|gawk -v BASEDIR=../$BASEDIR -v src=${lang0} -v dst=eo -f ../_scripts/lib/traduki_po.awk > "../_locale/${lang}/${FIC}.po.nova"
+    if diff "../_locale/${lang}/${FIC}.po.nova" "../_locale/${lang}/${FIC}.po" >/dev/null
     then
-      rm ../_locale/${lang}/${FIC}.po.nova
+      rm "../_locale/${lang}/${FIC}.po.nova"
+      touch "../_locale/${lang}/${FIC}.po"
     else
-      echo ĝisdatigi _locale/${lang}/${FIC}.po
-      mv ../_locale/${lang}/${FIC}.po.nova ../_locale/${lang}/${FIC}.po
+      echo ĝisdatigi "_locale/${lang}/${FIC}.po"
+      mv "../_locale/${lang}/${FIC}.po.nova" "../_locale/${lang}/${FIC}.po"
+      ## forigi neuzatajn frazojn 
+      msgattrib --no-obsolete -o ../_locale/${lang}/${FIC}.po ../_locale/${lang}/${FIC}.po
     fi
-    if [ ../${lang}/${FIC} -ot ../_locale/${lang}/${FIC}.po ]
+    if [ "../${lang}/${FIC}" -ot "../_locale/${lang}/${FIC}.po" ]
     then
       echo "tradukante ${FIC} al ${lang}"
       #grep -v "^#, fuzzy" ../_locale/${lang}/${FIC}.po >../_locale/temp$$.po
-      cat ../_locale/${lang}/${FIC}.po|sed "s/^#, fuzzy/#/" >../_locale/temp$$.po
-      po4a-translate $OPTIONS -m ${FIC} --master-charset "UTF-8"  --po ../_locale/temp$$.po --localized ../${lang}/${FIC} --localized-charset "UTF-8" -k 0
-      if egrep -m 1 "^#.*, fuzzy" ../_locale/${lang}/${FIC}.po >/dev/null
+      cat "../_locale/${lang}/${FIC}.po"|sed "s/^#, fuzzy/#/" >../_locale/temp$$.po
+      po4a-translate $OPTIONS -m "${FIC}" --master-charset "UTF-8"  --po ../_locale/temp$$.po --localized "../${lang}/${FIC}" --localized-charset "UTF-8" -k 0
+      if egrep -m 1 "^#.*, fuzzy" "../_locale/${lang}/${FIC}.po" >/dev/null
       then
        true
       else
-       sed -i "s/^lang-niv: auto$/lang-niv: homa/" ../${lang}/${FIC}
+       sed -i "s/^lang-niv: auto$/lang-niv: homa/" "../${lang}/${FIC}"
       fi
       rm ../_locale/temp$$.po
     fi

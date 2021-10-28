@@ -1,0 +1,16 @@
+#!/bin/bash
+
+. $(dirname $(readlink -f $0))/lib/head
+
+cd "$BASEDIR"
+cd ..
+
+LABORLINGVO=`grep "laborlingvo:" _config.yml|awk '{print $2;}'`
+
+if [ $LABORLINGVO != eo ]
+then
+ _scripts/lib/al_eo $LABORLINGVO
+fi
+
+sleep 2
+
