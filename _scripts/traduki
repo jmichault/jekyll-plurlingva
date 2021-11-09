@@ -1,4 +1,17 @@
 #!/bin/bash
+#########################################
+#
+#  traduke [lingvo] [dosiero]*
+#
+# unu argomento :
+#    tradukas el esperanto al la lingvo de la argumento.
+# 
+# sen argumento :
+#    se laborlingvo ne estas esperanto : traduki al esperanto
+#    poste tradukas ĉion al la aliaj lingvoj.
+#
+#########################################
+
 
 . $(dirname $(readlink -f $0))/lib/head
 
@@ -7,16 +20,25 @@ cd ..
 
 LABORLINGVO=`grep "laborlingvo:" _config.yml|awk '{print $2;}'`
 
-if [ $LABORLINGVO != eo ]
-then
- _scripts/lib/al_eo $LABORLINGVO
+lang0=eo
+
+if [ $# -gt 0 ] ; then
+  LINGVOJ="$1"
+else
+  LINGVOJ=$(grep "^..:$" _data/languages.yml|sed "s/:$//"|grep -v $lang0)
+  if [ $LABORLINGVO != eo -a $# -ge 0 ] ; then
+     _scripts/lib/al_eo $LABORLINGVO
+  fi
 fi
 
-
-lang0=eo
 cd eo
 
-for FIC in `find . -type f -name "*.md" -o -name "*.yml"|egrep -v "/_drafts/|.backup$|.swp$"`
+if [ $# -gt 1 ] ; then 
+  shift
+  echo "$@"
+else
+  find . -type f -name "*.md" -o -name "*.yml"|egrep -v "/_drafts/|.backup$|.swp$"
+fi | while read FIC
 do
   EXT="${FIC##*.}"
   case "$EXT" in
@@ -36,8 +58,9 @@ do
       po4a-updatepo --wrap-po no -m "${FIC}" --master-charset "UTF-8" $OPTIONS --po "../_locale/${lang0}/${FIC}.pot"
     fi
   fi
-  for lang in `grep "^..:$" ../_data/languages.yml|sed "s/:$//"|grep -v $lang0`
+  for lang in $LINGVOJ
   do
+    # ne traduki se fina dosiero ekzistas, sed ne la "po" dosiero 
     if [ ! -f "../_locale/${lang}/${FIC}.po" -a -f "../${lang}/${FIC}" ]
     then
       continue;

@@ -14,7 +14,8 @@ if [ ! -d "$BASEDIR"/../../$lang0 ] ; then
 fi
 cd "$BASEDIR"/../../$lang0
 
-for FIC in `find . -type f -name "*.md" -o -name "*.yml"|egrep -v "/_drafts/|.backup$"`
+find . -type f -name "*.md" -o -name "*.yml"|egrep -v "/_drafts/|.backup$" \
+ | while read FIC
 do
   EXT="${FIC##*.}"
   case "$EXT" in
@@ -72,7 +73,7 @@ do
       echo ĝisdatigi "_locale/${lang}/${FIC}.po"
       mv "../_locale/${lang}/${FIC}.po.nova" "../_locale/${lang}/${FIC}.po"
       ## forigi neuzatajn frazojn 
-      msgattrib --no-obsolete -o ../_locale/${lang}/${FIC}.po ../_locale/${lang}/${FIC}.po
+      msgattrib --no-obsolete -o "../_locale/${lang}/${FIC}.po" "../_locale/${lang}/${FIC}.po"
     fi
     if [ "../${lang}/${FIC}" -ot "../_locale/${lang}/${FIC}.po" ]
     then
